@@ -7,27 +7,31 @@
             this.user_id = this.getUserId();
             return this;
         },
-        run: function() {
+        run: async function() {
             var self = this;
             console.info('Bắt đầu!');
             console.info('Đang tìm kiếm....');
-            fetch("https://www.facebook.com/ajax/browser/list/group_confirmed_members/?gid=" + encodeURIComponent(group_id) + "&order=default&filter=unavailable_accounts&view=list&limit=1&sectiontype=unavailable&start=0&__a=1", { credentials: "include" }).then(function(response) {
-                return response.text()
-            }).then(function(payload) {
-                for (var regex =
-                    /id=\\"unavailable_([0-9]+)\\"/g, matches = regex.exec(payload); null != matches;)
-                    self.members.push(matches[1]), matches = regex.exec(payload);
-                // console.log(self.members);
-                console.log('Tìm thấy: ' + self.members.length + ' thành viên không khả dụng');
-                self.removeMembers();
-
-            })
+            const response = await fetch("https://www.facebook.com/ajax/browser/list/group_confirmed_members/?gid=" + encodeURIComponent(group_id) + "&order=default&filter=unavailable_accounts&view=list&limit=10&sectiontype=unavailable&start=0&__a=1", { credentials: "include" })
+            const json = await response.text()
+            let datas = JSON.parse(json.substring(9))
+            datas = datas.jsmods.elements
+            console.log(datas)
+            for (var i = datas.length - 1; i >= 0; i--) {
+                for (var j = datas[i].length - 1; j >= 0; j--) {
+                    const account = datas[i][j]
+                    if (typeof account == 'string' && account.includes('unavailable_')) {
+                        this.members.push(account.substring('unavailable_'.length));
+                    }
+                }
+            }
+            console.log(this.members);
+            console.log('Tìm thấy: ' + this.members.length + ' thành viên không khả dụng');
+            this.removeMembers();
         },
-        removeMembers: function() {
+        removeMembers: async function() {
             console.warn('Bắt đầu xóa thành viên....');
-            var members = this.members;
-            for (const member of members) {
-                this.removeMember(member)
+            for (const member of this.members) {
+                await this.removeMember(member)
             }
         },
         removeMember: async function(member) {
@@ -39,7 +43,9 @@
             const json = await fetch("https://www.facebook.com/ajax/groups/remove_member/?group_id=" + group_id + "&member_id=" + member + "&is_undo=0&source=profile_browser&dpr=1", {
                 credentials: "include",
                 body: data,
-                method: "POST"
+                method: "POST",
+                referrer: "https://www.facebook.com/groups/167363136987053/unavailable_accounts/",
+                mode: 'cors'
             }).then(function() {
                 console.info('Đã xóa: ' + member);
             })
