@@ -3,8 +3,9 @@
     var MemberRemover = {
         init: function() {
             this.members = []
-            this.group_id = document.querySelector("meta[property='al:android:url']").getAttribute('content')
-            this.group_id = this.group_id.replace("fb://group/", "")
+            this.group_id = 
+            this.group_id = document.querySelector('a[href$="/unavailable_accounts/"]')
+            this.group_id = this.group_id.href.match(/\d+/)[0]
             this.access_token = window.prompt("Nhập Access Token của bạn: ")
             this.dtsg = this.getDtsg()
             this.user_id = this.getUserId()
